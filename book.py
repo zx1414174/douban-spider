@@ -1,6 +1,8 @@
 import requests
+from  pyquery import PyQuery
 
-class bookSpider():
+
+class BookSpider:
     """
     豆瓣读书爬虫类
     """
@@ -8,7 +10,6 @@ class bookSpider():
         """
         :return void
         """
-        headers = bookSpider.static_get_headers()
 
     @staticmethod
     def static_get_headers():
@@ -27,4 +28,12 @@ class bookSpider():
         :return:
         """
         url = 'https://book.douban.com/tag/?view=type'
-        headers = bookSpider.static_get_headers()
+        headers = BookSpider.static_get_headers()
+        url_response = requests.get(url, headers=headers)
+        doc = PyQuery(url_response.text)
+        div_list = doc('div.article > div:eq(1) > div')
+        print(div_list)
+
+
+book_spider = BookSpider()
+book_spider.tagSpider()
