@@ -1,5 +1,5 @@
 import pymysql
-from Config import DbConfig
+from Config import Config
 
 
 class MysqlTool:
