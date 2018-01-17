@@ -1,5 +1,5 @@
 import configparser
-
+import os
 
 class ConfigTool:
     """
@@ -26,7 +26,10 @@ class ConfigTool:
         key = item_split[2]
         if file_name not in self.__config_data.keys():
             cf = configparser.ConfigParser()
-            self.__config_data[file_name] = cf.read(file_name + '.py')
+            # 获取文件绝对路径
+            config_path = os.path.dirname(__file__) + '/' + file_name + '.conf'
+            cf.read(config_path)
+            self.__config_data[file_name] = cf
         return self.__config_data[file_name].get(option, key)
 
 
