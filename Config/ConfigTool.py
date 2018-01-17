@@ -1,5 +1,7 @@
 import configparser
-class DbConfig:
+
+
+class ConfigTool:
     """
     数据库配置
     """
@@ -14,10 +16,10 @@ class DbConfig:
         :return: DbConfig
         """
         if cls.__install == '':
-            cls.__install = super(DbConfig, cls).__new__(cls)
+            cls.__install = super(ConfigTool, cls).__new__(cls)
         return cls.__install
 
-    def __getattr__(self, item):
+    def get_config_value(self, item):
         item_split = item.split('.')
         file_name = item_split[0]
         option = item_split[1]
@@ -25,5 +27,6 @@ class DbConfig:
         if file_name not in self.__config_data.keys():
             cf = configparser.ConfigParser()
             self.__config_data[file_name] = cf.read(file_name + '.py')
+        return self.__config_data[file_name].get(option, key)
 
 

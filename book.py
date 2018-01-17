@@ -1,5 +1,5 @@
 import requests
-from  pyquery import PyQuery
+from pyquery import PyQuery
 
 
 class BookSpider:
