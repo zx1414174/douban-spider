@@ -1,4 +1,5 @@
 import requests
+import time
 from pyquery import PyQuery
 from App.Tool.MysqlTool import MysqlTool
 
@@ -8,13 +9,13 @@ class BookSpider:
     豆瓣读书爬虫类
     """
     def __init__(self):
-        self.mysql_tool = MysqlTool()
+        self.__mysql_tool = MysqlTool()
 
     @staticmethod
     def static_get_headers():
         """
         获取请求头配置
-        :return: Dict
+        :return Dict:
         """
         return {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36',
@@ -31,7 +32,29 @@ class BookSpider:
         url_response = requests.get(url, headers=headers)
         doc = PyQuery(url_response.text)
         div_list = doc('div.article > div:eq(1) > div')
-        print(div_list)
+        now_time = time.time()
+        for div_item in div_list.items():
+            parent_insert_data = dict()
+            parent_insert_data['name'] = div_item.children('a').attr('name')
+            parent_insert_data['pid'] = 0
+            parent_insert_data['url'] = ''
+            parent_insert_data['book_count'] = 0
+            parent_insert_data['create_time'] = now_time
+            parent_insert_data['update_time'] = now_time
+            pid = self.__mysql_tool.insert('db_hot_tag', parent_insert_data)
+            child_items = div_item.find('table > tbody > tr > td')
+            for child_item in child_items.items():
+                children_insert_data = dict()
+                base_url = 'https://book.douban.com/tag/'
+                child_a = child_item.children('a')
+                children_insert_data['url'] = base_url + child_a.attr('href')
+                children_insert_data['name'] = child_a.text()
+                book_count = child_item.children('b').text()
+                children_insert_data['book_count'] = book_count[1:-1]
+                children_insert_data['pid'] = pid
+                children_insert_data['create_time'] = now_time
+                children_insert_data['update_time'] = now_time
+                self.__mysql_tool.insert('db_hot_tag', children_insert_data)
 
 
 book_spider = BookSpider()
