@@ -9,7 +9,8 @@ class BookSpider:
     豆瓣读书爬虫类
     """
     def __init__(self):
-        self.__mysql_tool = MysqlTool()
+        self.__mysql_tool = ''
+        # self.__mysql_tool = MysqlTool()
 
     @staticmethod
     def static_get_headers():
@@ -56,8 +57,32 @@ class BookSpider:
                 children_insert_data['update_time'] = now_time
                 self.__mysql_tool.insert('db_hot_tag', children_insert_data)
 
+    def list_handler(self, url):
+        """
+        热门标签列表处理
+        :param str url:
+        :return:
+        """
+        #测试写死一个链接
+        url = 'https://book.douban.com/tag/%E5%B0%8F%E8%AF%B4?start={start}&type=T'
+        url = url.format(start=0)
+        headers = self.static_get_headers()
+        url_response = requests.get(url, headers=headers)
+        doc = PyQuery(url_response.text)
+        list = doc('a.nbg')
+        print(list)
+
+    def detail_handler(self, url):
+        """
+        详情处理
+        :param str url:
+        :return:
+        """
+
+
+
 
 book_spider = BookSpider()
-book_spider.tag_spider()
+book_spider.list_handler('asdf')
 
 
