@@ -63,7 +63,7 @@ class BookSpider:
         :param str url:
         :return:
         """
-        #测试写死一个链接
+        # 测试写死一个链接
         url = 'https://book.douban.com/tag/%E5%B0%8F%E8%AF%B4?start={start}&type=T'
         url = url.format(start=0)
         headers = self.static_get_headers()
@@ -78,8 +78,20 @@ class BookSpider:
         :param str url:
         :return:
         """
+        url = ''
 
-
+    def get_pyquery_doc(self, url, headers=''):
+        """
+        获取pyquery处理doc
+        :param str url:
+        :param dict headers:
+        :return:
+        """
+        if headers == '':
+            headers = self.static_get_headers()
+        url_response = requests.get(url, headers=headers)
+        doc = PyQuery(url_response.text)
+        return doc
 
 
 book_spider = BookSpider()
