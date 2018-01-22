@@ -29,10 +29,7 @@ class BookSpider:
         :return:
         """
         url = 'https://book.douban.com/tag/?view=type'
-        headers = self.static_get_headers()
-        url_response = requests.get(url, headers=headers)
-        doc = PyQuery(url_response.text)
-        div_list = doc('div.article > div:eq(1) > div')
+        div_list = self.get_pyquery_doc(url)
         now_time = time.time()
         for div_item in div_list.items():
             parent_insert_data = dict()
@@ -65,10 +62,7 @@ class BookSpider:
         """
         # 测试写死一个链接
         url = 'https://book.douban.com/tag/%E5%B0%8F%E8%AF%B4?start={start}&type=T'
-        url = url.format(start=0)
-        headers = self.static_get_headers()
-        url_response = requests.get(url, headers=headers)
-        doc = PyQuery(url_response.text)
+        doc = self.get_pyquery_doc(url)
         list = doc('a.nbg')
         print(list)
 
@@ -76,9 +70,22 @@ class BookSpider:
         """
         详情处理
         :param str url:
+        :return dict:
+        """
+        url = 'https://book.douban.com/subject/25862578/'
+        book_data = dict()
+        doc = self.get_pyquery_doc(url)
+        book_data['name'] = doc('#wrapper > h1 > span').text()
+        book_data['author'] = doc('#info > span:eq(0)').text()
+        print(book_data['author'])
+
+    def detail_info_handler(self, doc):
+        """
+
+        :param doc:
         :return:
         """
-        url = ''
+
 
     def get_pyquery_doc(self, url, headers=''):
         """
@@ -95,6 +102,6 @@ class BookSpider:
 
 
 book_spider = BookSpider()
-book_spider.list_handler('asdf')
+book_spider.detail_handler('asdf')
 
 

@@ -1,6 +1,7 @@
 import configparser
 import os
 
+
 class ConfigTool:
     """
     数据库配置
