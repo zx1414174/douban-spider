@@ -1,5 +1,6 @@
 import requests
 import time
+from bs4 import BeautifulSoup
 from pyquery import PyQuery
 from App.Tool.MysqlTool import MysqlTool
 
@@ -8,6 +9,16 @@ class BookSpider:
     """
     豆瓣读书爬虫类
     """
+    __detail_info = {
+        '作者:': 'author',
+        '出版社:': 'publisher',
+        '出版年:': 'publication_year',
+        '页数:': 'pages',
+        '定价:': 'price',
+        '装帧:': 'layout',
+        'ISBN:': 'isbn',
+    }
+
     def __init__(self):
         self.__mysql_tool = ''
         # self.__mysql_tool = MysqlTool()
@@ -29,9 +40,7 @@ class BookSpider:
         :return:
         """
         url = 'https://book.douban.com/tag/?view=type'
-        headers = self.static_get_headers()
-        url_response = requests.get(url, headers=headers)
-        doc = PyQuery(url_response.text)
+        doc = self.get_pyquery_doc(url)
         div_list = doc('div.article > div:eq(1) > div')
         now_time = time.time()
         for div_item in div_list.items():
@@ -66,9 +75,7 @@ class BookSpider:
         # 测试写死一个链接
         url = 'https://book.douban.com/tag/%E5%B0%8F%E8%AF%B4?start={start}&type=T'
         url = url.format(start=0)
-        headers = self.static_get_headers()
-        url_response = requests.get(url, headers=headers)
-        doc = PyQuery(url_response.text)
+        doc = self.get_pyquery_doc(url)
         list = doc('a.nbg')
         print(list)
 
@@ -78,7 +85,34 @@ class BookSpider:
         :param str url:
         :return:
         """
-        url = ''
+        book_info = dict()
+        url = 'https://book.douban.com/subject/25862578/'
+        url_response = self.get_url_response(url)
+        soup = BeautifulSoup(url_response.text, 'lxml')
+        div_doc = soup.select('#info span')
+        for i, item in enumerate(div_doc):
+            print(i,  item)
+            print(i,  item.string)
+            if item.a:
+                print(i,  item.a.string)
+            print(i,  item.next_sibling.string)
+
+    def detail_info_handler(self, soup_item):
+        """
+        书籍详情信息模块处理
+        :param soup_item:
+        :return:
+        """
+
+        if soup_item.string in self.__detail_info.keys():
+            if self.__detail_info[soup_item.string] == 'author':
+                pass
+            elif 1:
+                pass
+            else:
+                pass
+        else:
+            pass
 
     def get_pyquery_doc(self, url, headers=''):
         """
@@ -87,14 +121,24 @@ class BookSpider:
         :param dict headers:
         :return:
         """
-        if headers == '':
-            headers = self.static_get_headers()
-        url_response = requests.get(url, headers=headers)
+        url_response = self.get_url_response(url, headers)
         doc = PyQuery(url_response.text)
         return doc
 
+    def get_url_response(self, url, headers=''):
+        """
+        获取链接请求文本
+        :param str url:
+        :param dict headers:
+        :return:
+        """
+        if headers == '':
+            headers = self.static_get_headers()
+        url_response = requests.get(url, headers=headers)
+        return url_response
+
 
 book_spider = BookSpider()
-book_spider.list_handler('asdf')
+book_spider.detail_handler('asdf')
 
 
