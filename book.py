@@ -16,7 +16,7 @@ class BookSpider:
         '页数:': 'pages',
         '定价:': 'price',
         '装帧:': 'layout',
-        'ISBN:': 'isbn',
+        # 'ISBN:': 'isbn',
     }
 
     def __init__(self):
@@ -86,33 +86,94 @@ class BookSpider:
         :return:
         """
         book_info = dict()
-        url = 'https://book.douban.com/subject/25862578/'
+        url = 'https://book.douban.com/subject/26698660/'
         url_response = self.get_url_response(url)
         soup = BeautifulSoup(url_response.text, 'lxml')
         div_doc = soup.select('#info span')
-        for i, item in enumerate(div_doc):
-            print(i,  item)
-            print(i,  item.string)
-            if item.a:
-                print(i,  item.a.string)
-            print(i,  item.next_sibling.string)
+        for i, soup_item in enumerate(div_doc):
+            if soup_item.string in self.__detail_info.keys():
+                book_info[soup_item.string] = self.detail_info_handler(soup_item)
 
     def detail_info_handler(self, soup_item):
         """
         书籍详情信息模块处理
         :param soup_item:
-        :return:
+        :return str:
         """
+        method = 'static_detail_info_{param}_handler'
+        method = method.format(param=self.__detail_info[soup_item.string])
+        return getattr(BookSpider, method)(soup_item)
 
-        if soup_item.string in self.__detail_info.keys():
-            if self.__detail_info[soup_item.string] == 'author':
-                pass
-            elif 1:
-                pass
-            else:
-                pass
-        else:
-            pass
+    @staticmethod
+    def static_detail_info_author_handler(soup_item):
+        """
+        处理书籍作者信息
+        :param soup_item:
+        :return str:
+        """
+        return soup_item.next_sibling.next_sibling.string.replace(' ', '').replace('\n', '')
+
+    @staticmethod
+    def static_detail_info_publisher_handler(soup_item):
+        """
+        书籍出版社信息
+        :return str:
+        """
+        return BookSpider.static_detail_info_normal_handler(soup_item)
+
+    @staticmethod
+    def static_detail_info_publication_year_handler(soup_item):
+        """
+        书籍出版年份信息
+        :param soup_item:
+        :return str:
+        """
+        return BookSpider.static_detail_info_normal_handler(soup_item)
+
+    @staticmethod
+    def static_detail_info_pages_handler(soup_item):
+        """
+        书籍页数信息
+        :param soup_item:
+        :return str:
+        """
+        return BookSpider.static_detail_info_normal_handler(soup_item)
+
+    @staticmethod
+    def static_detail_info_price_handler(soup_item):
+        """
+        书籍价格信息
+        :param soup_item:
+        :return str:
+        """
+        return soup_item.next_sibling.strip(' ').replace('元', '')
+
+    @staticmethod
+    def static_detail_info_isbn_handler(soup_item):
+        """
+        书籍isbn信息
+        :param soup_item:
+        :return str:
+        """
+        return BookSpider.static_detail_info_normal_handler(soup_item)
+
+    @staticmethod
+    def static_detail_info_layout_handler(soup_item):
+        """
+        书籍装帧信息
+        :param soup_item:
+        :return str:
+        """
+        return BookSpider.static_detail_info_normal_handler(soup_item)
+
+    @staticmethod
+    def static_detail_info_normal_handler(soup_item):
+        """
+        书籍信息通用处理方案
+        :param soup_item:
+        :return str:
+        """
+        return soup_item.next_sibling.strip(' ')
 
     def get_pyquery_doc(self, url, headers=''):
         """
