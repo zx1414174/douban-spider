@@ -91,11 +91,9 @@ class BookSpider:
         soup = BeautifulSoup(url_response.text, 'lxml')
         div_doc = soup.select('#info span')
         for i, item in enumerate(div_doc):
-            print(i,  item)
-            print(i,  item.string)
-            if item.a:
-                print(i,  item.a.string)
-            print(i,  item.next_sibling.string)
+            print(i,  item.next_sibling.next_sibling.string.replace(' ', '').replace('\n', ''))
+            # print(i,  self.detail_info_handler(item))
+            break
 
     def detail_info_handler(self, soup_item):
         """
@@ -103,16 +101,21 @@ class BookSpider:
         :param soup_item:
         :return:
         """
-
+        method = 'detail_info_{param}_handler'
         if soup_item.string in self.__detail_info.keys():
-            if self.__detail_info[soup_item.string] == 'author':
-                pass
-            elif 1:
-                pass
-            else:
-                pass
+            method = method.format(param=self.__detail_info[soup_item.string])
+            return getattr(BookSpider, method)(soup_item)
         else:
-            pass
+            return ''
+
+    @staticmethod
+    def detail_info_author_handler(self, soup_item):
+        """
+        详细信息作者
+        :param soup_item:
+        :return:
+        """
+        return soup_item.next_sibling.next_sibling.string.replace(' ', '').replace('\n', '')
 
     def get_pyquery_doc(self, url, headers=''):
         """
