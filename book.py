@@ -16,7 +16,7 @@ class BookSpider:
         '页数:': 'pages',
         '定价:': 'price',
         '装帧:': 'layout',
-        # 'ISBN:': 'isbn',
+        'ISBN:': 'isbn',
     }
 
     def __init__(self):
