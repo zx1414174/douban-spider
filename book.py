@@ -51,7 +51,7 @@ class BookSpider:
             parent_insert_data['book_count'] = 0
             parent_insert_data['create_time'] = now_time
             parent_insert_data['update_time'] = now_time
-            pid = self.__mysql_tool.insert('db_hot_tag', parent_insert_data)
+            pid = self.__mysql_tool.insert('db_book_tag', parent_insert_data)
             child_items = div_item.find('table > tbody > tr > td')
             for child_item in child_items.items():
                 children_insert_data = dict()
