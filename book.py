@@ -92,13 +92,17 @@ class BookSpider:
         div_doc = soup.select('#info span')
         for i, soup_item in enumerate(div_doc):
             if soup_item.string in self.__detail_info.keys():
-                book_info[soup_item.string] = self.detail_info_handler(soup_item)
+                book_info[self.__detail_info[soup_item.string]] = self.detail_info_handler(soup_item)
+        book_info['url'] = url.strip('/')
         book_info['grade'] = soup.select('div.rating_self > strong.rating_num')[0].string.strip(' ')
         book_info['five_graded_percent'] = soup.select('div.rating_wrap > span.stars5')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
         book_info['four_graded_percent'] = soup.select('div.rating_wrap > span.stars4')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
         book_info['three_graded_percent'] = soup.select('div.rating_wrap > span.stars3')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
         book_info['two_graded_percent'] = soup.select('div.rating_wrap > span.stars2')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
         book_info['one_graded_percent'] = soup.select('div.rating_wrap > span.stars1')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
+        book_info['short_comment_count'] = soup.select('div.mod-hd > h2 > span.pl > a')[0].string.replace('全部', '').replace('条', '').strip(' ')
+        book_info['book_review_count'] = soup.select('section.reviews > p.pl > a')[0].string.replace('更多书评', '').replace('篇', '').replace('\n', '').replace(' ', '')
+        book_info['note_count'] = soup.select('div.ugc-mod > div.hd > h2 > span.pl > a > span')[0].string
         print(book_info)
 
     def detail_info_handler(self, soup_item):
