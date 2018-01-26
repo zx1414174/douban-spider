@@ -93,6 +93,13 @@ class BookSpider:
         for i, soup_item in enumerate(div_doc):
             if soup_item.string in self.__detail_info.keys():
                 book_info[soup_item.string] = self.detail_info_handler(soup_item)
+        book_info['grade'] = soup.select('div.rating_self > strong.rating_num')[0].string.strip(' ')
+        book_info['five_graded_percent'] = soup.select('div.rating_wrap > span.stars5')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
+        book_info['four_graded_percent'] = soup.select('div.rating_wrap > span.stars4')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
+        book_info['three_graded_percent'] = soup.select('div.rating_wrap > span.stars3')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
+        book_info['two_graded_percent'] = soup.select('div.rating_wrap > span.stars2')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
+        book_info['one_graded_percent'] = soup.select('div.rating_wrap > span.stars1')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
+        print(book_info)
 
     def detail_info_handler(self, soup_item):
         """
