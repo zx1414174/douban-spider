@@ -6,6 +6,11 @@ class MysqlTool:
     """
     数据库操作类
     """
+    # 查询表名
+    __table = ''
+    # 表主键名
+    __primary_key = 'id'
+
     def __init__(self):
         config = ConfigTool()
         host = config.get_config_value('mysql.db.host')
@@ -40,6 +45,29 @@ class MysqlTool:
         except Exception:
             self.__db.rollback()
             return False
+
+    def count(self):
+        """
+        表数据数量
+        :return:
+        """
+        sql = 'select count({primary_key}) as mysql_total from {table}'.format(primary_key=self.__primary_key, table=self.__table)
+        try:
+            self.__cursor.execute(sql)
+            row = self.__cursor.fetchone()
+            return row['mysql_total']
+        except:
+            return False
+
+    def set_table(self, table):
+        """
+        设置表名
+        :param table:
+        :return:
+        """
+        self.__table = table
+
+
 
 
 
