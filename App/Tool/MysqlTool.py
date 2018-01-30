@@ -55,7 +55,8 @@ class MysqlTool:
         表数据数量
         :return:
         """
-        sql = 'select count({primary_key}) as mysql_total from {table}'.format(primary_key=self.__primary_key, table=self.__table)
+        sql = 'select count({primary_key}) as mysql_total from {table} {where}'.\
+            format(primary_key=self.__primary_key, table=self.__table, where=self.__builder).strip(' ')
         try:
             self.__cursor.execute(sql)
             row = self.__cursor.fetchone()
@@ -63,8 +64,25 @@ class MysqlTool:
         except:
             return False
 
-    def sql(self):
-        """设置构造器sql"""
+    def exit(self):
+        """
+        是否存在数据
+        :return:
+        """
+        count = self.count()
+        if count > 0:
+            return True
+        return False
+
+    def sql(self, sql_str):
+        """
+        设置 查询sql
+        :param sql_str:
+        :return:
+        """
+        self.__builder.sql(sql_str)
+        return self
+
     def set_table(self, table):
         """
         设置表名
@@ -72,6 +90,7 @@ class MysqlTool:
         :return:
         """
         self.__table = table
+        return self
 
 
 

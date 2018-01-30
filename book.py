@@ -20,8 +20,8 @@ class BookSpider:
     }
 
     def __init__(self):
-        self.__mysql_tool = ''
-        # self.__mysql_tool = MysqlTool()
+        # self.__mysql_tool = ''
+        self.__mysql_tool = MysqlTool()
 
     @staticmethod
     def static_get_headers():
@@ -66,18 +66,31 @@ class BookSpider:
                 children_insert_data['update_time'] = now_time
                 self.__mysql_tool.insert('db_hot_tag', children_insert_data)
 
-    def list_handler(self, url):
+    def list_handler(self, url, tag_id):
         """
         热门标签列表处理
         :param str url:
+        :param int tag_id:
         :return:
         """
         # 测试写死一个链接
-        url = 'https://book.douban.com/tag/%E5%B0%8F%E8%AF%B4?start={start}&type=T'
-        url = url.format(start=0)
-        doc = self.get_pyquery_doc(url)
-        list = doc('a.nbg')
-        print(list)
+        url = url.strip('/') + '?start={start}&type=T'
+        is_end = False
+        start = 0
+        while not is_end:
+            page_url = url.format(start=start)
+            doc = self.get_pyquery_doc(page_url)
+            detail_doc_list = doc('ul.subject-list > li > div.info > h2 a')
+            is_end = True
+            for detail_item in detail_doc_list.items():
+                is_end = False
+                start = start+1
+                detail_url = detail_item.attr('href')
+                book_info = self.detail_handler(detail_url)
+                book_where_sql = "where subject_id='{subject_id}'".format(subject_id=book_info['subject_id'])
+               # if not self.__mysql_tool.sql(book_where_sql).exit():
+
+
 
     def detail_handler(self, url):
         """
@@ -86,7 +99,6 @@ class BookSpider:
         :return:
         """
         book_info = dict()
-        url = 'https://book.douban.com/subject/26698660/'
         url_response = self.get_url_response(url)
         soup = BeautifulSoup(url_response.text, 'lxml')
         div_doc = soup.select('#info span')
@@ -94,6 +106,7 @@ class BookSpider:
             if soup_item.string in self.__detail_info.keys():
                 book_info[self.__detail_info[soup_item.string]] = self.detail_info_handler(soup_item)
         book_info['url'] = url.strip('/')
+        book_info['subject_id'] = book_info['url'][book_info['url'].rfind('/')+1:]
         book_info['grade'] = soup.select('div.rating_self > strong.rating_num')[0].string.strip(' ')
         book_info['five_graded_percent'] = soup.select('div.rating_wrap > span.stars5')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
         book_info['four_graded_percent'] = soup.select('div.rating_wrap > span.stars4')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
@@ -103,7 +116,7 @@ class BookSpider:
         book_info['short_comment_count'] = soup.select('div.mod-hd > h2 > span.pl > a')[0].string.replace('全部', '').replace('条', '').strip(' ')
         book_info['book_review_count'] = soup.select('section.reviews > p.pl > a')[0].string.replace('更多书评', '').replace('篇', '').replace('\n', '').replace(' ', '')
         book_info['note_count'] = soup.select('div.ugc-mod > div.hd > h2 > span.pl > a > span')[0].string
-        print(book_info)
+        return book_info
 
     def detail_info_handler(self, soup_item):
         """
@@ -211,6 +224,6 @@ class BookSpider:
 
 
 book_spider = BookSpider()
-book_spider.detail_handler('asdf')
+book_spider.list_handler('https://book.douban.com/tag/%E5%B0%8F%E8%AF%B4')
 
 
