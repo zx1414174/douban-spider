@@ -1,5 +1,6 @@
 import pymysql
 from ..Config.ConfigTool import ConfigTool
+from .Builder import Builder
 
 
 class MysqlTool:
@@ -10,9 +11,12 @@ class MysqlTool:
     __table = ''
     # 表主键名
     __primary_key = 'id'
+    # 查询构造器
+    __builder = None
 
     def __init__(self):
         config = ConfigTool()
+        self.__builder = Builder()
         host = config.get_config_value('mysql.db.host')
         user = config.get_config_value('mysql.db.user')
         password = config.get_config_value('mysql.db.password')
@@ -59,6 +63,8 @@ class MysqlTool:
         except:
             return False
 
+    def sql(self):
+        """设置构造器sql"""
     def set_table(self, table):
         """
         设置表名
