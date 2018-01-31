@@ -88,7 +88,8 @@ class BookSpider:
                 detail_url = detail_item.attr('href')
                 book_info = self.detail_handler(detail_url)
                 book_where_sql = "where subject_id='{subject_id}'".format(subject_id=book_info['subject_id'])
-               # if not self.__mysql_tool.sql(book_where_sql).exit():
+                if not self.__mysql_tool.set_table('').sql(book_where_sql).exit():
+                    pass
 
 
 
