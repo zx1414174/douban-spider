@@ -24,7 +24,7 @@ class MysqlTool:
         db = config.get_config_value('mysql.db.db')
         self.__db = pymysql.connect(host=host, user=user, password=password, port=port, db=db)
         self.__db.set_charset('utf8')
-        self.__cursor = self.__db.cursor()
+        self.__cursor = self.__db.cursor(pymysql.cursors.DictCursor)
         self.__cursor.execute('SET NAMES utf8;')
         self.__cursor.execute('SET CHARACTER SET utf8;')
         self.__cursor.execute('SET character_set_connection=utf8;')
@@ -56,11 +56,39 @@ class MysqlTool:
         :return:
         """
         sql = 'select count({primary_key}) as mysql_total from {table} {where}'.\
-            format(primary_key=self.__primary_key, table=self.__table, where=self.__builder).strip(' ')
+            format(primary_key=self.__primary_key, table=self.__table, where=self.__builder.build()).strip(' ')
         try:
             self.__cursor.execute(sql)
             row = self.__cursor.fetchone()
             return row['mysql_total']
+        except:
+            return False
+
+    def find(self):
+        """
+        查找单条数据
+        :return tuple:
+        """
+        sql = 'select * from {table} {where}'.\
+            format(table=self.__table, where=self.__builder.build()).strip(' ')
+        try:
+            self.__cursor.execute(sql)
+            row = self.__cursor.fetchone()
+            return row
+        except:
+            return False
+
+    def get(self):
+        """
+        获取多条数据
+        :return tuple:
+        """
+        sql = 'select * from {table} {where}'.\
+            format(table=self.__table, where=self.__builder.build()).strip(' ')
+        try:
+            self.__cursor.execute(sql)
+            results = self.__cursor.fetchall()
+            return results
         except:
             return False
 

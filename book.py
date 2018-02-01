@@ -1,5 +1,7 @@
 import requests
 import time
+from urllib.parse import urlencode
+import random
 from bs4 import BeautifulSoup
 from pyquery import PyQuery
 from App.Tool.MysqlTool import MysqlTool
@@ -31,7 +33,9 @@ class BookSpider:
         """
         return {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36',
-            'Cookie': 'bid=ymkWnDhkpU8; gr_user_id=879bd70d-a9f5-4221-be9e-1ef0d3b227b8; _vwo_uuid_v2=56F5845AAF682CCA6AAA6E84C7DECF9F|a9b1c518f8c45aee9f5ccda10c6f1ba3; __yadk_uid=8xXrlsG2IbCkbhiSnhttF4Ui9RQSAQCp; __utmz=30149280.1514881536.2.2.utmcsr=jianshu.com|utmccn=(referral)|utmcmd=referral|utmcct=/p/555e85a29ec7; __utmz=81379588.1514881536.2.2.utmcsr=jianshu.com|utmccn=(referral)|utmcmd=referral|utmcct=/p/555e85a29ec7; __utmc=30149280; __utmc=81379588; viewed="2230208_26698660_25862578_26740503_27138747"; _pk_ref.100001.3ac3=%5B%22%22%2C%22%22%2C1515208888%2C%22https%3A%2F%2Fwww.jianshu.com%2Fp%2F555e85a29ec7%22%5D; _pk_id.100001.3ac3=9024db9782721515.1513136377.4.1515208888.1515206167.; _pk_ses.100001.3ac3=*; __utma=30149280.1058233073.1513136377.1515205493.1515208888.4; __utmt_douban=1; __utmb=30149280.1.10.1515208888; __utma=81379588.270456487.1513136377.1515205493.1515208888.4; __utmt=1; __utmb=81379588.1.10.1515208888',
+            'Referer': 'https://book.douban.com/',
+            'Host': 'book.douban.com',
+            'Cookie': 'bid=ymkWnDhkpU8; gr_user_id=879bd70d-a9f5-4221-be9e-1ef0d3b227b8; _vwo_uuid_v2=56F5845AAF682CCA6AAA6E84C7DECF9F|a9b1c518f8c45aee9f5ccda10c6f1ba3; __yadk_uid=8xXrlsG2IbCkbhiSnhttF4Ui9RQSAQCp; ap=1; ct=y; ll="108169"; viewed="25862578_26698660_4820710_26853356_5431784_26986954_1770782_2230208_26740503_27138747"; __utmz=30149280.1517280294.19.7.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); __utmz=81379588.1517280294.19.7.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); __utma=30149280.1058233073.1513136377.1517280294.1517464849.20; __utmc=30149280; __utmt=1; _pk_ref.100001.3ac3=%5B%22%22%2C%22%22%2C1517464889%2C%22https%3A%2F%2Fwww.douban.com%2Fmisc%2Fsorry%3Foriginal-url%3Dhttps%253A%252F%252Fbook.douban.com%252Ftag%252F%252Ftag%252F%2525E5%2525B0%25258F%2525E8%2525AF%2525B4%22%5D; _pk_ses.100001.3ac3=*; gr_session_id_22c937bbd8ebd703f2d8e9445f7dfd03=26120979-2065-449b-8c7f-45b506a72712; gr_cs1_26120979-2065-449b-8c7f-45b506a72712=user_id%3A0; __utmt_douban=1; __utma=81379588.270456487.1513136377.1517280294.1517464895.20; __utmc=81379588; _pk_id.100001.3ac3=9024db9782721515.1513136377.22.1517465017.1517281842.; __utmb=30149280.8.10.1517464849; __utmb=81379588.5.10.1517464895',
         }
 
     def tag_spider(self):
@@ -66,6 +70,17 @@ class BookSpider:
                 children_insert_data['update_time'] = now_time
                 self.__mysql_tool.insert('db_hot_tag', children_insert_data)
 
+    def book_spider(self):
+        """
+        爬取豆瓣书籍
+        :return:
+        """
+        tag_list = self.__mysql_tool.set_table('db_book_tag').get()
+        for tag in tag_list:
+            if tag['url'] != '':
+                url = tag['url'].replace('tag//tag', 'tag')
+                self.list_handler(url, tag['id'])
+
     def list_handler(self, url, tag_id):
         """
         热门标签列表处理
@@ -74,11 +89,13 @@ class BookSpider:
         :return:
         """
         # 测试写死一个链接
-        url = url.strip('/') + '?start={start}&type=T'
+        url = url.strip('/')
         is_end = False
         start = 0
+        now_time = time.time()
         while not is_end:
-            page_url = url.format(start=start)
+            param = '?start={start}&type=T'.format(start=start)
+            page_url = url + param
             doc = self.get_pyquery_doc(page_url)
             detail_doc_list = doc('ul.subject-list > li > div.info > h2 a')
             is_end = True
@@ -87,11 +104,24 @@ class BookSpider:
                 start = start+1
                 detail_url = detail_item.attr('href')
                 book_info = self.detail_handler(detail_url)
+                book_info['create_time'] = now_time
+                book_info['update_time'] = now_time
                 book_where_sql = "where subject_id='{subject_id}'".format(subject_id=book_info['subject_id'])
-                if not self.__mysql_tool.set_table('').sql(book_where_sql).exit():
-                    pass
-
-
+                if not self.__mysql_tool.set_table('db_book').sql(book_where_sql).exit():
+                    book_id = self.__mysql_tool.insert('db_book', book_info)
+                else:
+                    db_book_info = self.__mysql_tool.sql(book_where_sql).find()
+                    book_id = db_book_info['id']
+                tag_where_sql = "where tag_id={tag_id} and book_id={book_id}".format(tag_id=tag_id, book_id=book_id)
+                if not self.__mysql_tool.sql(tag_where_sql).exit():
+                    tag_relation = {
+                        'book_id': book_id,
+                        'tag_id': tag_id,
+                        'create_time': now_time,
+                        'update_time': now_time,
+                    }
+                    self.__mysql_tool.insert('db_book_tag_relation', tag_relation)
+                time.sleep(random.randint(1,5))
 
     def detail_handler(self, url):
         """
@@ -225,6 +255,6 @@ class BookSpider:
 
 
 book_spider = BookSpider()
-book_spider.list_handler('https://book.douban.com/tag/%E5%B0%8F%E8%AF%B4')
+book_spider.book_spider()
 
 
