@@ -13,6 +13,7 @@ class BookSpider:
     """
     __detail_info = {
         '作者:': 'author',
+        '作者': 'author',
         '出版社:': 'publisher',
         '出版年:': 'publication_year',
         '页数:': 'pages',
@@ -103,12 +104,14 @@ class BookSpider:
                 is_end = False
                 start = start+1
                 detail_url = detail_item.attr('href')
+                print(detail_url)
                 book_info = self.detail_handler(detail_url)
-                book_info['create_time'] = now_time
-                book_info['update_time'] = now_time
+                book_info['create_time'] = int(now_time)
+                book_info['update_time'] = int(now_time)
                 book_where_sql = "where subject_id='{subject_id}'".format(subject_id=book_info['subject_id'])
                 if not self.__mysql_tool.set_table('db_book').sql(book_where_sql).exit():
                     book_id = self.__mysql_tool.insert('db_book', book_info)
+                    if book_id == False: raise Exception('书籍添加错误')
                 else:
                     db_book_info = self.__mysql_tool.sql(book_where_sql).find()
                     book_id = db_book_info['id']
@@ -121,7 +124,7 @@ class BookSpider:
                         'update_time': now_time,
                     }
                     self.__mysql_tool.insert('db_book_tag_relation', tag_relation)
-                time.sleep(random.randint(1,5))
+                time.sleep(random.randint(1, 5))
 
     def detail_handler(self, url):
         """
@@ -137,16 +140,28 @@ class BookSpider:
             if soup_item.string in self.__detail_info.keys():
                 book_info[self.__detail_info[soup_item.string]] = self.detail_info_handler(soup_item)
         book_info['url'] = url.strip('/')
+        book_info['title'] = soup.select('#wrapper > h1 > span')[0].string
         book_info['subject_id'] = book_info['url'][book_info['url'].rfind('/')+1:]
+        book_info['book_img'] = soup.select('#mainpic > a > img')[0].attrs['src']
         book_info['grade'] = soup.select('div.rating_self > strong.rating_num')[0].string.strip(' ')
+        book_info['graded_number'] = soup.select('div.rating_sum > span > a > span')[0].string
         book_info['five_graded_percent'] = soup.select('div.rating_wrap > span.stars5')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
         book_info['four_graded_percent'] = soup.select('div.rating_wrap > span.stars4')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
         book_info['three_graded_percent'] = soup.select('div.rating_wrap > span.stars3')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
         book_info['two_graded_percent'] = soup.select('div.rating_wrap > span.stars2')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
         book_info['one_graded_percent'] = soup.select('div.rating_wrap > span.stars1')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
-        book_info['short_comment_count'] = soup.select('div.mod-hd > h2 > span.pl > a')[0].string.replace('全部', '').replace('条', '').strip(' ')
-        book_info['book_review_count'] = soup.select('section.reviews > p.pl > a')[0].string.replace('更多书评', '').replace('篇', '').replace('\n', '').replace(' ', '')
-        book_info['note_count'] = soup.select('div.ugc-mod > div.hd > h2 > span.pl > a > span')[0].string
+        if len(soup.select('div.mod-hd > h2 > span.pl > a')) > 0 :
+            book_info['short_comment_count'] = soup.select('div.mod-hd > h2 > span.pl > a')[0].string.replace('全部', '').replace('条', '').strip(' ')
+        else:
+            book_info['short_comment_count'] = 0
+        if len(soup.select('section.reviews > p.pl > a')) > 0 :
+            book_info['book_review_count'] = soup.select('section.reviews > p.pl > a')[0].string.replace('更多书评', '').replace('篇', '').replace('\n', '').replace(' ', '')
+        else:
+            book_info['book_review_count'] = 0
+        if len(soup.select('div.ugc-mod > div.hd > h2 > span.pl > a > span')) > 0:
+            book_info['note_count'] = soup.select('div.ugc-mod > div.hd > h2 > span.pl > a > span')[0].string
+        else:
+            book_info['note_count'] = 0
         return book_info
 
     def detail_info_handler(self, soup_item):
@@ -192,7 +207,7 @@ class BookSpider:
         :param soup_item:
         :return str:
         """
-        return BookSpider.static_detail_info_normal_handler(soup_item)
+        return BookSpider.static_detail_info_normal_handler(soup_item).replace('页', '').strip(' ')
 
     @staticmethod
     def static_detail_info_price_handler(soup_item):
@@ -201,7 +216,9 @@ class BookSpider:
         :param soup_item:
         :return str:
         """
-        return soup_item.next_sibling.strip(' ').replace('元', '')
+        return soup_item.next_sibling.\
+            replace('元', '').replace('CNY', '').replace('HK$', '').replace('NTD', '').\
+            replace('（全两册）', '').replace('（全三册）', '').strip(' ')
 
     @staticmethod
     def static_detail_info_isbn_handler(soup_item):
@@ -256,5 +273,6 @@ class BookSpider:
 
 book_spider = BookSpider()
 book_spider.book_spider()
+# print(book_spider.detail_handler('https://book.douban.com/subject/26963900/'))
 
 
