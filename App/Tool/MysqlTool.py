@@ -44,8 +44,9 @@ class MysqlTool:
         sql = 'INSERT INTO {table}({keys}) VALUES ({values})'.format(table=table, keys=key_string, values=value_string)
         try:
             result = self.__cursor.execute(sql, tuple(data.values()))
+            last_id = self.__cursor.lastrowid
             self.__db.commit()
-            return result
+            return last_id
         except Exception:
             self.__db.rollback()
             return False
