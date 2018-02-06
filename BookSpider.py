@@ -1,10 +1,8 @@
-import requests
 import time
-from urllib.parse import urlencode
 import random
 from bs4 import BeautifulSoup
-from pyquery import PyQuery
 from App.Tool.MysqlTool import MysqlTool
+from App.Url.Common import Common
 
 
 class BookSpider:
@@ -25,19 +23,7 @@ class BookSpider:
     def __init__(self):
         # self.__mysql_tool = ''
         self.__mysql_tool = MysqlTool()
-
-    @staticmethod
-    def static_get_headers():
-        """
-        获取请求头配置
-        :return Dict:
-        """
-        return {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
-            'Referer': 'https://book.douban.com/',
-            'Host': 'book.douban.com',
-            'Cookie': 'bid=ymkWnDhkpU8; gr_user_id=879bd70d-a9f5-4221-be9e-1ef0d3b227b8; _vwo_uuid_v2=56F5845AAF682CCA6AAA6E84C7DECF9F|a9b1c518f8c45aee9f5ccda10c6f1ba3; __yadk_uid=8xXrlsG2IbCkbhiSnhttF4Ui9RQSAQCp; ap=1; ct=y; ll="108169"; __utmc=30149280; __utmz=30149280.1517625096.21.8.utmcsr=douban.com|utmccn=(referral)|utmcmd=referral|utmcct=/; __utmc=81379588; __utmz=81379588.1517625096.21.8.utmcsr=douban.com|utmccn=(referral)|utmcmd=referral|utmcct=/; gr_session_id_22c937bbd8ebd703f2d8e9445f7dfd03=5dd46054-be0e-44a4-acb9-a9964ac04558; gr_cs1_5dd46054-be0e-44a4-acb9-a9964ac04558=user_id%3A0; __utma=30149280.1058233073.1513136377.1517820579.1517825577.26; __utma=81379588.270456487.1513136377.1517820579.1517825577.25; _pk_ref.100001.3ac3=%5B%22%22%2C%22%22%2C1517825577%2C%22https%3A%2F%2Fwww.douban.com%2F%22%5D; _pk_ses.100001.3ac3=*; viewed="4820710_5431784_26431618_3826899_25779593_27025036_26680113_1456692_2257283_26963900"; __utmt_douban=1; __utmb=30149280.6.10.1517825577; __utmt=1; __utmb=81379588.6.10.1517825577; _pk_id.100001.3ac3=9024db9782721515.1513136377.27.1517827998.1517823290.',
-        }
+        self.__common = Common()
 
     def tag_spider(self):
         """
@@ -45,7 +31,7 @@ class BookSpider:
         :return:
         """
         url = 'https://book.douban.com/tag/?view=type'
-        doc = self.get_pyquery_doc(url)
+        doc = self.__common.get_pyquery_doc(url)
         div_list = doc('div.article > div:eq(1) > div')
         now_time = time.time()
         for div_item in div_list.items():
@@ -97,7 +83,7 @@ class BookSpider:
         while not is_end:
             param = '?start={start}&type=T'.format(start=start)
             page_url = url + param
-            doc = self.get_pyquery_doc(page_url)
+            doc = self.__common.get_pyquery_doc(page_url)
             detail_doc_list = doc('ul.subject-list > li > div.info > h2 a')
             is_end = True
             for detail_item in detail_doc_list.items():
@@ -105,25 +91,21 @@ class BookSpider:
                 start = start+1
                 detail_url = detail_item.attr('href')
                 print(detail_url)
-                err_count = 1
-                while err_count <= 5:
-                    try:
-                        book_info = self.detail_handler(detail_url)
-                        #7 代表成功
-                        err_count = 7
-                    except:
-                        time.sleep(1)
-                        err_count = err_count + 1
-                else:
-                    #6 代表重试后失败
-                    if err_count == 6:
-                        continue
+                book_info = self.detail_handler(detail_url)
+                if not book_info:
+                    self.__mysql_tool.insert('db_error', {
+                        'message': detail_url,
+                        'create_time': int(now_time),
+                        'update_time': int(now_time),
+                    })
+                    continue
                 book_info['create_time'] = int(now_time)
                 book_info['update_time'] = int(now_time)
                 book_where_sql = "where subject_id='{subject_id}'".format(subject_id=book_info['subject_id'])
                 if not self.__mysql_tool.set_table('db_book').sql(book_where_sql).exit():
                     book_id = self.__mysql_tool.insert('db_book', book_info)
-                    if book_id == False: raise Exception('书籍添加错误')
+                    if not book_id:
+                        raise Exception('书籍添加错误')
                 else:
                     db_book_info = self.__mysql_tool.sql(book_where_sql).find()
                     book_id = db_book_info['id']
@@ -145,7 +127,9 @@ class BookSpider:
         :return:
         """
         book_info = dict()
-        url_response = self.get_url_response(url)
+        url_response = self.__common.get_url_response(url)
+        if not url_response:
+            return url_response
         soup = BeautifulSoup(url_response.text, 'lxml')
         div_doc = soup.select('#info span')
         for i, soup_item in enumerate(div_doc):
@@ -258,29 +242,6 @@ class BookSpider:
         :return str:
         """
         return soup_item.next_sibling.strip(' ')
-
-    def get_pyquery_doc(self, url, headers=''):
-        """
-        获取pyquery处理doc
-        :param str url:
-        :param dict headers:
-        :return:
-        """
-        url_response = self.get_url_response(url, headers)
-        doc = PyQuery(url_response.text)
-        return doc
-
-    def get_url_response(self, url, headers=''):
-        """
-        获取链接请求文本
-        :param str url:
-        :param dict headers:
-        :return:
-        """
-        if headers == '':
-            headers = self.static_get_headers()
-        url_response = requests.get(url, headers=headers)
-        return url_response
 
 
 book_spider = BookSpider()
