@@ -56,20 +56,26 @@ class Common:
         }
 
     @staticmethod
-    def static_is_proxy_alive(proxy):
+    def static_is_proxy_alive(proxy, protocol_type='https'):
         """
         检测代理是否可用
-        :param proxy:
+        :param str proxy: 代理链接
+        :param str protocol_type: 代理协议类型
         :return:
         """
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'
         }
-        test_url = 'www.baidu.com'
+        proxies = {
+            protocol_type: proxy
+        }
+        test_url = 'https://www.baidu.com'
         try:
-            response = requests.get(test_url, allow_redirects=False, headers=headers, timeout=2)
+            response = requests.get(test_url, allow_redirects=False, headers=headers, timeout=2, proxies=proxies)
             response.raise_for_status()
             return True
         except requests.exceptions.RequestException:
             return False
 
+
+print(Common.static_is_proxy_alive('118.212.137.135:31288'))
