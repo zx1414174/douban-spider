@@ -11,7 +11,7 @@
  Target Server Version : 50719
  File Encoding         : 65001
 
- Date: 05/02/2018 19:05:38
+ Date: 09/02/2018 14:03:00
 */
 
 SET NAMES utf8mb4;
@@ -228,6 +228,33 @@ CREATE TABLE `db_book_tag_relation`  (
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   `book_id` int(10) UNSIGNED NOT NULL COMMENT '书籍id',
   `tag_id` int(10) UNSIGNED NOT NULL COMMENT '热门标签id',
+  `create_time` int(10) UNSIGNED NOT NULL,
+  `update_time` int(10) UNSIGNED NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for db_error
+-- ----------------------------
+DROP TABLE IF EXISTS `db_error`;
+CREATE TABLE `db_error`  (
+  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `message` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '错误信息',
+  `create_time` int(10) UNSIGNED NOT NULL,
+  `update_time` int(10) UNSIGNED NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for db_proxy
+-- ----------------------------
+DROP TABLE IF EXISTS `db_proxy`;
+CREATE TABLE `db_proxy`  (
+  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `ip` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'ip地址',
+  `port` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '端口',
+  `protocol_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '协议类型',
+  `fail_num` int(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT '失败计数',
   `create_time` int(10) UNSIGNED NOT NULL,
   `update_time` int(10) UNSIGNED NOT NULL,
   PRIMARY KEY (`id`) USING BTREE

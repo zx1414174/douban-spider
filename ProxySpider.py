@@ -22,12 +22,17 @@ class ProxySpider:
         for i in range(10):
             now_url = url.format(page=i+1)
             doc = self.__common.get_pyquery_doc(now_url)
-            tr_doc_list = doc('#ip_list > tr.odd')
+            tr_doc_list = doc('#ip_list > tr')
+            is_first = True
             for tr_doc in tr_doc_list.items():
+                if is_first:
+                    is_first = False
+                    continue
+                td_list = tr_doc.find("td")
                 insert_proxy_data = dict()
-                insert_proxy_data['ip'] = tr_doc.find('td:eq(1)').text()
-                insert_proxy_data['port'] = tr_doc.find('td:eq(2)').text()
-                insert_proxy_data['protocol_type'] = tr_doc.find('td:eq(5)').text()
+                insert_proxy_data['ip'] = td_list.eq(1).text()
+                insert_proxy_data['port'] = td_list.eq(2).text()
+                insert_proxy_data['protocol_type'] = td_list.eq(5).text()
                 print(insert_proxy_data)
                 break
 

@@ -7,6 +7,7 @@ class Common:
     """
     url处理公共类
     """
+    # 默认处理头
     headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
             'Referer': 'https://book.douban.com/',
@@ -22,7 +23,7 @@ class Common:
         """
         doc = False
         url_response = self.get_url_response(url, headers)
-        if not url_response:
+        if url_response:
             doc = PyQuery(url_response.text)
         return doc
 
