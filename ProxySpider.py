@@ -1,5 +1,6 @@
 from App.Tool.MysqlTool import MysqlTool
 from App.Url.Common import Common
+import time
 
 
 class ProxySpider:
@@ -12,13 +13,15 @@ class ProxySpider:
         self.__common.set_header({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'
         })
+        self.now_time = time.time()
 
-    def xici_spider(self):
+    def xici_spider(self, url):
         """
         爬取西刺代理
-        :return:
+        :param url:
+        :return dist :
         """
-        url = 'http://www.xicidaili.com/wn/{page}'
+        url = url.strip('/') + '/{page}'
         for i in range(10):
             now_url = url.format(page=i+1)
             doc = self.__common.get_pyquery_doc(now_url)
@@ -33,9 +36,18 @@ class ProxySpider:
                 insert_proxy_data['ip'] = td_list.eq(1).text()
                 insert_proxy_data['port'] = td_list.eq(2).text()
                 insert_proxy_data['protocol_type'] = td_list.eq(5).text()
+                where_sql = "where ip='{ip}' and port='{port}' and protocol_type='{protocol_type}'"\
+                    .format(**insert_proxy_data)
+                if self.__mysql_tool.sql(where_sql).exit():
+                    continue
+                insert_proxy_data['create_time'] = self.now_time
+                insert_proxy_data['update_time'] = self.now_time
+                self.__mysql_tool.insert('db_proxy', insert_proxy_data)
                 print(insert_proxy_data)
-                break
 
 
 proxy_spider = ProxySpider()
-proxy_spider.xici_spider()
+proxy_spider.xici_spider('http://www.xicidaili.com/nn/')
+proxy_spider.xici_spider('http://www.xicidaili.com/nt/')
+proxy_spider.xici_spider('http://www.xicidaili.com/wn/')
+proxy_spider.xici_spider('http://www.xicidaili.com/wt/')
