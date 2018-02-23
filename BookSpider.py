@@ -1,8 +1,8 @@
 import time
 import random
 from bs4 import BeautifulSoup
-from App.Tool.MysqlTool import MysqlTool
-from App.Url.Common import Common
+from App.Mysql.MysqlTool import MysqlTool
+from App.Url.Proxy import Proxy
 
 
 class BookSpider:
@@ -23,15 +23,16 @@ class BookSpider:
     def __init__(self):
         # self.__mysql_tool = ''
         self.__mysql_tool = MysqlTool()
-        self.__common = Common()
+        self.__proxy = Proxy()
 
     def tag_spider(self):
         """
         豆瓣热门标签爬取
         :return:
         """
+        self.__mysql_tool.set_table('db_book_tag')
         url = 'https://book.douban.com/tag/?view=type'
-        doc = self.__common.get_pyquery_doc(url)
+        doc = self.__proxy.get_pyquery_doc(url)
         div_list = doc('div.article > div:eq(1) > div')
         now_time = time.time()
         for div_item in div_list.items():
@@ -42,7 +43,7 @@ class BookSpider:
             parent_insert_data['book_count'] = 0
             parent_insert_data['create_time'] = now_time
             parent_insert_data['update_time'] = now_time
-            pid = self.__mysql_tool.insert('db_book_tag', parent_insert_data)
+            pid = self.__mysql_tool.insert(parent_insert_data)
             child_items = div_item.find('table > tbody > tr > td')
             for child_item in child_items.items():
                 children_insert_data = dict()
@@ -55,13 +56,14 @@ class BookSpider:
                 children_insert_data['pid'] = pid
                 children_insert_data['create_time'] = now_time
                 children_insert_data['update_time'] = now_time
-                self.__mysql_tool.insert('db_hot_tag', children_insert_data)
+                self.__mysql_tool.insert(children_insert_data)
 
     def book_spider(self):
         """
         爬取豆瓣书籍
         :return:
         """
+        self.__mysql_tool.set_table('db_book_tag')
         tag_list = self.__mysql_tool.set_table('db_book_tag').get()
         for tag in tag_list:
             if tag['url'] != '':
@@ -83,7 +85,7 @@ class BookSpider:
         while not is_end:
             param = '?start={start}&type=T'.format(start=start)
             page_url = url + param
-            doc = self.__common.get_pyquery_doc(page_url)
+            doc = self.__proxy.get_pyquery_doc(page_url)
             detail_doc_list = doc('ul.subject-list > li > div.info > h2 a')
             is_end = True
             for detail_item in detail_doc_list.items():
@@ -93,7 +95,7 @@ class BookSpider:
                 print(detail_url)
                 book_info = self.detail_handler(detail_url)
                 if not book_info:
-                    self.__mysql_tool.insert('db_error', {
+                    self.__mysql_tool.set_table('db_error').insert({
                         'message': detail_url,
                         'create_time': int(now_time),
                         'update_time': int(now_time),
@@ -103,21 +105,21 @@ class BookSpider:
                 book_info['update_time'] = int(now_time)
                 book_where_sql = "where subject_id='{subject_id}'".format(subject_id=book_info['subject_id'])
                 if not self.__mysql_tool.set_table('db_book').sql(book_where_sql).exit():
-                    book_id = self.__mysql_tool.insert('db_book', book_info)
+                    book_id = self.__mysql_tool.set_table('db_book').insert(book_info)
                     if not book_id:
                         raise Exception('书籍添加错误')
                 else:
-                    db_book_info = self.__mysql_tool.sql(book_where_sql).find()
+                    db_book_info = self.__mysql_tool.search_sql(book_where_sql).find()
                     book_id = db_book_info['id']
                 tag_where_sql = "where tag_id={tag_id} and book_id={book_id}".format(tag_id=tag_id, book_id=book_id)
-                if not self.__mysql_tool.sql(tag_where_sql).exit():
+                if not self.__mysql_tool.search_sql(tag_where_sql).exit():
                     tag_relation = {
                         'book_id': book_id,
                         'tag_id': tag_id,
                         'create_time': now_time,
                         'update_time': now_time,
                     }
-                    self.__mysql_tool.insert('db_book_tag_relation', tag_relation)
+                    self.__mysql_tool.set_table('db_book_tag_relation').insert(tag_relation)
                 time.sleep(random.randint(1, 5))
 
     def detail_handler(self, url):
@@ -127,7 +129,7 @@ class BookSpider:
         :return:
         """
         book_info = dict()
-        url_response = self.__common.get_url_response(url)
+        url_response = self.__proxy.get_url_response(url)
         if not url_response:
             return url_response
         soup = BeautifulSoup(url_response.text, 'lxml')

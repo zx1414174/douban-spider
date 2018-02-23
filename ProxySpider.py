@@ -1,4 +1,4 @@
-from App.Tool.MysqlTool import MysqlTool
+from App.Mysql.MysqlTool import MysqlTool
 from App.Url.Common import Common
 import time
 
@@ -38,11 +38,11 @@ class ProxySpider:
                 insert_proxy_data['protocol_type'] = td_list.eq(5).text()
                 where_sql = "where ip='{ip}' and port='{port}' and protocol_type='{protocol_type}'"\
                     .format(**insert_proxy_data)
-                if self.__mysql_tool.sql(where_sql).exit():
+                if self.__mysql_tool.search_sql(where_sql).exit():
                     continue
                 insert_proxy_data['create_time'] = self.now_time
                 insert_proxy_data['update_time'] = self.now_time
-                self.__mysql_tool.insert('db_proxy', insert_proxy_data)
+                self.__mysql_tool.set_table('db_proxy').insert(insert_proxy_data)
                 print(insert_proxy_data)
 
 

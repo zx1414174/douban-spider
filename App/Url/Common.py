@@ -82,26 +82,6 @@ class Common:
         self.__request_param['headers'] = headers
         return self
 
-    def is_proxy_alive(self, proxy, protocol_type='https'):
-        """
-        检测代理是否可用
-        :param str proxy: 代理链接
-        :param str protocol_type: 代理协议类型
-        :return:
-        """
-        request_param = dict()
-        request_param['headers'] = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'
-        }
-        request_param['proxies'] = {
-            protocol_type: proxy
-        }
-        request_param['allow_redirects'] = False
-        request_param['timeout'] = 2
-        url = 'https://www.baidu.com'
-        response = self.set_request_param(request_param).get_url_response(url)
-        return response
-
     def set_proxies(self, proxies):
         """
         设置proxies type
@@ -121,5 +101,4 @@ class Common:
         return self
 
 
-# common = Common()
-# print(common.is_proxy_alive('114.115.140.25:3128'))
+
