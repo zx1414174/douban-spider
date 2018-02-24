@@ -1,19 +1,23 @@
 from App.Mysql.MysqlTool import MysqlTool
 from App.Url.Common import Common
+from CommonSpider import CommonSpider
 import time
 
 
-class ProxySpider:
+class ProxySpider(CommonSpider):
     """
     免费代理数据爬取
     """
     def __init__(self):
         self.__mysql_tool = MysqlTool()
-        self.__common = Common()
-        self.__common.set_header({
+        self.now_time = time.time()
+        CommonSpider.__init__(self)
+
+    def __set_request_tool(self):
+        self._request_tool = Common()
+        self._request_tool.set_header({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'
         })
-        self.now_time = time.time()
 
     def xici_spider(self, url):
         """
@@ -24,7 +28,7 @@ class ProxySpider:
         url = url.strip('/') + '/{page}'
         for i in range(10):
             now_url = url.format(page=i+1)
-            doc = self.__common.get_pyquery_doc(now_url)
+            doc = self._request_tool.get_pyquery_doc(now_url)
             tr_doc_list = doc('#ip_list > tr')
             is_first = True
             for tr_doc in tr_doc_list.items():

@@ -3,9 +3,10 @@ import random
 from bs4 import BeautifulSoup
 from App.Mysql.MysqlTool import MysqlTool
 from App.Url.Proxy import Proxy
+from CommonSpider import CommonSpider
 
 
-class BookSpider:
+class BookSpider(CommonSpider):
     """
     豆瓣读书爬虫类
     """
@@ -22,8 +23,11 @@ class BookSpider:
 
     def __init__(self):
         # self.__mysql_tool = ''
+        CommonSpider.__init__(self)
         self.__mysql_tool = MysqlTool()
-        self.__proxy = Proxy()
+
+    def __set_request_tool(self):
+        self._request_tool = Proxy()
 
     def tag_spider(self):
         """
@@ -32,7 +36,7 @@ class BookSpider:
         """
         self.__mysql_tool.set_table('db_book_tag')
         url = 'https://book.douban.com/tag/?view=type'
-        doc = self.__proxy.get_pyquery_doc(url)
+        doc = self._request_tool.get_pyquery_doc(url)
         div_list = doc('div.article > div:eq(1) > div')
         now_time = time.time()
         for div_item in div_list.items():
@@ -85,7 +89,7 @@ class BookSpider:
         while not is_end:
             param = '?start={start}&type=T'.format(start=start)
             page_url = url + param
-            doc = self.__proxy.get_pyquery_doc(page_url)
+            doc = self._request_tool.get_pyquery_doc(page_url)
             detail_doc_list = doc('ul.subject-list > li > div.info > h2 a')
             is_end = True
             for detail_item in detail_doc_list.items():
@@ -129,7 +133,7 @@ class BookSpider:
         :return:
         """
         book_info = dict()
-        url_response = self.__proxy.get_url_response(url)
+        url_response = self._request_tool.get_url_response(url)
         if not url_response:
             return url_response
         soup = BeautifulSoup(url_response.text, 'lxml')

@@ -16,11 +16,15 @@ class Proxy(MysqlTool):
             return dict()
         return result
 
-    def get_proxy_response(self):
+    def increase_fail_num(self, num=1):
         """
-        使用代理返回对象
+        新增fail_num
+        :param num:
         :return:
         """
+
+
+
 
 #
 # proxy = Proxy()
