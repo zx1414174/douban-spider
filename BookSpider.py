@@ -1,7 +1,7 @@
 import time
 import random
 from bs4 import BeautifulSoup
-from App.Mysql.MysqlTool import MysqlTool
+from App.Mysql.Proxy import Proxy as MysqlProxy
 from App.Url.Proxy import Proxy
 from CommonSpider import CommonSpider
 
@@ -24,10 +24,26 @@ class BookSpider(CommonSpider):
     def __init__(self):
         # self.__mysql_tool = ''
         CommonSpider.__init__(self)
-        self.__mysql_tool = MysqlTool()
+        self.__mysql_tool = MysqlProxy()
 
     def __set_request_tool(self):
         self._request_tool = Proxy()
+
+    def get_response_use_proxy(self):
+        """
+        获取请求信息
+        :return:
+        """
+        is_can_use = False
+        while not is_can_use:
+            proxy_data = self.__mysql_tool.get_rand_proxy()
+            proxy_url = proxy_data['ip'] + ':' + proxy_data['port']
+            proxy_type = proxy_data['protocol_type']
+            is_can_use = self._request_tool.is_proxy_alive(proxy_url, proxy_type)
+            if not is_can_use:
+                pass
+        if is_can_use:
+            pass
 
     def tag_spider(self):
         """
@@ -124,7 +140,6 @@ class BookSpider(CommonSpider):
                         'update_time': now_time,
                     }
                     self.__mysql_tool.set_table('db_book_tag_relation').insert(tag_relation)
-                time.sleep(random.randint(1, 5))
 
     def detail_handler(self, url):
         """

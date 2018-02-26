@@ -146,8 +146,24 @@ class MysqlTool:
         :param table:
         :return:
         """
-        self.__table = table
+        self._table = table
         return self
+
+    def increase(self, primary_id, set_data):
+        """
+        增加字段数量
+        :param int primary_id:主键id
+        :param dict set_data:{字段名:增加的数量}
+        :return:
+        """
+        table = self.get_table_name()
+        sql = 'UPDATE {table} SET {set_sql} WHERE {primary_key} = {primary_id}'
+        set_sql = ''
+        for field, num in set_data.items():
+            set_sql += field + '=' + num + ','
+        set_sql = set_sql.strip(',')
+        sql = sql.format(table=table, set_sql=set_sql, primary_key=self._primary_key, primary_id=primary_id)
+
 
 
 
