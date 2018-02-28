@@ -157,12 +157,41 @@ class MysqlTool:
         :return:
         """
         table = self.get_table_name()
-        sql = 'UPDATE {table} SET {set_sql} WHERE {primary_key} = {primary_id}'
+        sql = 'UPDATE {table} SET {set_sql} WHERE {primary_key} = %s'
         set_sql = ''
+        param_data = []
         for field, num in set_data.items():
-            set_sql += field + '=' + num + ','
+            set_sql += field + '=' + field + '+ %s' + ','
+            param_data.append(num)
         set_sql = set_sql.strip(',')
-        sql = sql.format(table=table, set_sql=set_sql, primary_key=self._primary_key, primary_id=primary_id)
+        param_data.append(primary_id)
+        sql = sql.format(table=table, set_sql=set_sql, primary_key=self._primary_key)
+        try:
+            self.__cursor.execute(sql, tuple(param_data))
+            self.__db.commit()
+            return True
+        except:
+            self.__db.rollback()
+            return False
+
+    def update(self, data):
+        table = self.get_table_name()
+        sql = 'UPDATE {table} SET {set_sql} {where}'
+        set_sql = ''
+        param_data = []
+        for field, value in data.items():
+            set_sql += field + '=' + '%s' + ','
+            param_data.append(value)
+        set_sql = set_sql.strip(',')
+        sql = sql.format(table=table, set_sql=set_sql, where=self.__builder.build())
+        try:
+            self.__cursor.execute(sql, tuple(param_data))
+            self.__db.commit()
+            return True
+        except:
+            self.__db.rollback()
+            return False
+
 
 
 

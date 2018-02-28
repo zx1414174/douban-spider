@@ -6,9 +6,9 @@ class CommonSpider:
     _request_tool = None
 
     def __init__(self):
-        self.__set_request_tool()
+        self._set_request_tool()
 
-    def __set_request_tool(self):
+    def _set_request_tool(self):
         """
         设置request工具类
         :return:

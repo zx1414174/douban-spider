@@ -1,5 +1,5 @@
 import time
-import random
+from pyquery import PyQuery
 from bs4 import BeautifulSoup
 from App.Mysql.Proxy import Proxy as MysqlProxy
 from App.Url.Proxy import Proxy
@@ -26,24 +26,41 @@ class BookSpider(CommonSpider):
         CommonSpider.__init__(self)
         self.__mysql_tool = MysqlProxy()
 
-    def __set_request_tool(self):
+    def _set_request_tool(self):
         self._request_tool = Proxy()
 
-    def get_response_use_proxy(self):
+    def get_response_use_proxy(self, url):
         """
         获取请求信息
         :return:
         """
         is_can_use = False
-        while not is_can_use:
+        proxy_data = dict()
+        for i in range(10):
             proxy_data = self.__mysql_tool.get_rand_proxy()
             proxy_url = proxy_data['ip'] + ':' + proxy_data['port']
             proxy_type = proxy_data['protocol_type']
             is_can_use = self._request_tool.is_proxy_alive(proxy_url, proxy_type)
             if not is_can_use:
-                pass
+                self.__mysql_tool.increase(proxy_data['id'], {
+                    'fail_num': 1
+                })
+            else:
+                self.__mysql_tool.update({
+                    'fail_num': 0
+                })
+                break
         if is_can_use:
-            pass
+            proxy = proxy_data['ip']+':'+proxy_data['port']
+            proxies = {
+                proxy_data['protocol_type']: proxy
+            }
+            url_response = self._request_tool.set_proxies(proxies).get_url_response(url)
+            if not url_response:
+                url_response = self._request_tool.del_proxies().get_url_response(url)
+        else:
+            url_response = self._request_tool.del_proxies().get_url_response(url)
+        return url_response
 
     def tag_spider(self):
         """
@@ -98,6 +115,7 @@ class BookSpider(CommonSpider):
         :return:
         """
         # 测试写死一个链接
+        now_time = time.time()
         url = url.strip('/')
         is_end = False
         start = 0
@@ -105,7 +123,15 @@ class BookSpider(CommonSpider):
         while not is_end:
             param = '?start={start}&type=T'.format(start=start)
             page_url = url + param
-            doc = self._request_tool.get_pyquery_doc(page_url)
+            url_response = self.get_response_use_proxy(page_url)
+            if not url_response:
+                self.__mysql_tool.insert({
+                    'message': 'list,miss:'+page_url,
+                    'create_time': now_time,
+                    'update_time': now_time,
+                })
+                continue
+            doc = PyQuery(url_response.text)
             detail_doc_list = doc('ul.subject-list > li > div.info > h2 a')
             is_end = True
             for detail_item in detail_doc_list.items():
@@ -148,7 +174,7 @@ class BookSpider(CommonSpider):
         :return:
         """
         book_info = dict()
-        url_response = self._request_tool.get_url_response(url)
+        url_response = self._request_tool.get_repeat_url_response(url)
         if not url_response:
             return url_response
         soup = BeautifulSoup(url_response.text, 'lxml')

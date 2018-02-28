@@ -13,7 +13,7 @@ class ProxySpider(CommonSpider):
         self.now_time = time.time()
         CommonSpider.__init__(self)
 
-    def __set_request_tool(self):
+    def _set_request_tool(self):
         self._request_tool = Common()
         self._request_tool.set_header({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'

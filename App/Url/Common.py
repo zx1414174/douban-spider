@@ -91,6 +91,10 @@ class Common:
         self.__request_param['proxies'] = proxies
         return self
 
+    def del_proxies(self):
+        self.__request_param.pop('proxies')
+        return self
+
     def set_request_param(self, request_param):
         """
         设置
