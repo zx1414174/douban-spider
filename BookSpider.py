@@ -324,7 +324,7 @@ class BookSpider(CommonSpider):
 
 
 book_spider = BookSpider()
-book_spider.book_spider()
+book_spider.get_response_use_proxy('https://www.baidu.com/')
 # print(book_spider.detail_handler('https://book.douban.com/subject/26963900/'))
 
 
