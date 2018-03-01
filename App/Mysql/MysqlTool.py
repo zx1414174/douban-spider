@@ -166,13 +166,13 @@ class MysqlTool:
         set_sql = set_sql.strip(',')
         param_data.append(primary_id)
         sql = sql.format(table=table, set_sql=set_sql, primary_key=self._primary_key)
-        try:
-            self.__cursor.execute(sql, tuple(param_data))
-            self.__db.commit()
-            return True
-        except:
-            self.__db.rollback()
-            return False
+        # try:
+        self.__cursor.execute(sql, tuple(param_data))
+        self.__db.commit()
+        return True
+        # except:
+        #     self.__db.rollback()
+        #     return False
 
     def update(self, data):
         table = self.get_table_name()

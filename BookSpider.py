@@ -2,6 +2,10 @@ import time
 from pyquery import PyQuery
 from bs4 import BeautifulSoup
 from App.Mysql.Proxy import Proxy as MysqlProxy
+from App.Mysql.BookTag import BookTag
+from App.Mysql.Error import Error
+from App.Mysql.Book import Book
+from App.Mysql.BookTagRelation import BookTagRelation
 from App.Url.Proxy import Proxy
 from CommonSpider import CommonSpider
 
@@ -22,9 +26,12 @@ class BookSpider(CommonSpider):
     }
 
     def __init__(self):
-        # self.__mysql_tool = ''
         CommonSpider.__init__(self)
-        self.__mysql_tool = MysqlProxy()
+        self.__proxy_mysql = MysqlProxy()
+        self.__book_tag_mysql = BookTag()
+        self.__error_mysql = Error()
+        self.__book_mysql = Book()
+        self.__book_tag_relation_mysql = BookTagRelation()
 
     def _set_request_tool(self):
         self._request_tool = Proxy()
@@ -37,16 +44,16 @@ class BookSpider(CommonSpider):
         is_can_use = False
         proxy_data = dict()
         for i in range(10):
-            proxy_data = self.__mysql_tool.get_rand_proxy()
+            proxy_data = self.__proxy_mysql.get_rand_proxy()
             proxy_url = proxy_data['ip'] + ':' + proxy_data['port']
             proxy_type = proxy_data['protocol_type']
             is_can_use = self._request_tool.is_proxy_alive(proxy_url, proxy_type)
             if not is_can_use:
-                self.__mysql_tool.increase(proxy_data['id'], {
+                self.__proxy_mysql.increase(proxy_data['id'], {
                     'fail_num': 1
                 })
             else:
-                self.__mysql_tool.update({
+                self.__proxy_mysql.update({
                     'fail_num': 0
                 })
                 break
@@ -67,7 +74,6 @@ class BookSpider(CommonSpider):
         豆瓣热门标签爬取
         :return:
         """
-        self.__mysql_tool.set_table('db_book_tag')
         url = 'https://book.douban.com/tag/?view=type'
         doc = self._request_tool.get_pyquery_doc(url)
         div_list = doc('div.article > div:eq(1) > div')
@@ -80,7 +86,7 @@ class BookSpider(CommonSpider):
             parent_insert_data['book_count'] = 0
             parent_insert_data['create_time'] = now_time
             parent_insert_data['update_time'] = now_time
-            pid = self.__mysql_tool.insert(parent_insert_data)
+            pid = self.__book_tag_mysql.insert(parent_insert_data)
             child_items = div_item.find('table > tbody > tr > td')
             for child_item in child_items.items():
                 children_insert_data = dict()
@@ -93,15 +99,14 @@ class BookSpider(CommonSpider):
                 children_insert_data['pid'] = pid
                 children_insert_data['create_time'] = now_time
                 children_insert_data['update_time'] = now_time
-                self.__mysql_tool.insert(children_insert_data)
+                self.__book_tag_mysql.insert(children_insert_data)
 
     def book_spider(self):
         """
         爬取豆瓣书籍
         :return:
         """
-        self.__mysql_tool.set_table('db_book_tag')
-        tag_list = self.__mysql_tool.set_table('db_book_tag').get()
+        tag_list = self.__book_tag_mysql.get()
         for tag in tag_list:
             if tag['url'] != '':
                 url = tag['url'].replace('tag//tag', 'tag')
@@ -115,7 +120,6 @@ class BookSpider(CommonSpider):
         :return:
         """
         # 测试写死一个链接
-        now_time = time.time()
         url = url.strip('/')
         is_end = False
         start = 0
@@ -125,10 +129,10 @@ class BookSpider(CommonSpider):
             page_url = url + param
             url_response = self.get_response_use_proxy(page_url)
             if not url_response:
-                self.__mysql_tool.insert({
+                self.__error_mysql.insert({
                     'message': 'list,miss:'+page_url,
-                    'create_time': now_time,
-                    'update_time': now_time,
+                    'create_time': int(now_time),
+                    'update_time': int(now_time),
                 })
                 continue
             doc = PyQuery(url_response.text)
@@ -141,7 +145,7 @@ class BookSpider(CommonSpider):
                 print(detail_url)
                 book_info = self.detail_handler(detail_url)
                 if not book_info:
-                    self.__mysql_tool.set_table('db_error').insert({
+                    self.__error_mysql.insert({
                         'message': detail_url,
                         'create_time': int(now_time),
                         'update_time': int(now_time),
@@ -150,22 +154,22 @@ class BookSpider(CommonSpider):
                 book_info['create_time'] = int(now_time)
                 book_info['update_time'] = int(now_time)
                 book_where_sql = "where subject_id='{subject_id}'".format(subject_id=book_info['subject_id'])
-                if not self.__mysql_tool.set_table('db_book').sql(book_where_sql).exit():
-                    book_id = self.__mysql_tool.set_table('db_book').insert(book_info)
+                if not self.__book_mysql.search_sql(book_where_sql).exit():
+                    book_id = self.__book_mysql.insert(book_info)
                     if not book_id:
                         raise Exception('书籍添加错误')
                 else:
-                    db_book_info = self.__mysql_tool.search_sql(book_where_sql).find()
+                    db_book_info = self.__book_mysql.search_sql(book_where_sql).find()
                     book_id = db_book_info['id']
                 tag_where_sql = "where tag_id={tag_id} and book_id={book_id}".format(tag_id=tag_id, book_id=book_id)
-                if not self.__mysql_tool.search_sql(tag_where_sql).exit():
+                if not self.__book_tag_relation_mysql.search_sql(tag_where_sql).exit():
                     tag_relation = {
                         'book_id': book_id,
                         'tag_id': tag_id,
                         'create_time': now_time,
                         'update_time': now_time,
                     }
-                    self.__mysql_tool.set_table('db_book_tag_relation').insert(tag_relation)
+                    self.__book_tag_relation_mysql.insert(tag_relation)
 
     def detail_handler(self, url):
         """
@@ -174,7 +178,7 @@ class BookSpider(CommonSpider):
         :return:
         """
         book_info = dict()
-        url_response = self._request_tool.get_repeat_url_response(url)
+        url_response = self.get_response_use_proxy(url)
         if not url_response:
             return url_response
         soup = BeautifulSoup(url_response.text, 'lxml')
@@ -183,16 +187,44 @@ class BookSpider(CommonSpider):
             if soup_item.string in self.__detail_info.keys():
                 book_info[self.__detail_info[soup_item.string]] = self.detail_info_handler(soup_item)
         book_info['url'] = url.strip('/')
-        book_info['title'] = soup.select('#wrapper > h1 > span')[0].string
+        if len(soup.select('#wrapper > h1 > span')) > 0:
+            book_info['title'] = soup.select('#wrapper > h1 > span')[0].string
+        else:
+            book_info['title'] = ''
         book_info['subject_id'] = book_info['url'][book_info['url'].rfind('/')+1:]
-        book_info['book_img'] = soup.select('#mainpic > a > img')[0].attrs['src']
-        book_info['grade'] = soup.select('div.rating_self > strong.rating_num')[0].string.strip(' ')
-        book_info['graded_number'] = soup.select('div.rating_sum > span > a > span')[0].string
-        book_info['five_graded_percent'] = soup.select('div.rating_wrap > span.stars5')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
-        book_info['four_graded_percent'] = soup.select('div.rating_wrap > span.stars4')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
-        book_info['three_graded_percent'] = soup.select('div.rating_wrap > span.stars3')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
-        book_info['two_graded_percent'] = soup.select('div.rating_wrap > span.stars2')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
-        book_info['one_graded_percent'] = soup.select('div.rating_wrap > span.stars1')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
+        if len(soup.select('#mainpic > a > img')) > 0:
+            book_info['book_img'] = soup.select('#mainpic > a > img')[0].attrs['src']
+        else:
+            book_info['book_img'] = ''
+        if len(soup.select('div.rating_self > strong.rating_num')) > 0:
+            book_info['grade'] = soup.select('div.rating_self > strong.rating_num')[0].string.strip(' ')
+        else:
+            book_info['grade'] = 0
+        if len(soup.select('div.rating_sum > span > a > span')) > 0:
+            book_info['graded_number'] = soup.select('div.rating_sum > span > a > span')[0].string
+        else:
+            book_info['graded_number'] = 0
+
+        if len(soup.select('div.rating_wrap > span.stars5')) > 0:
+            book_info['five_graded_percent'] = soup.select('div.rating_wrap > span.stars5')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
+        else:
+            book_info['five_graded_percent'] = 0
+        if len(soup.select('div.rating_wrap > span.stars4')) > 0:
+            book_info['four_graded_percent'] = soup.select('div.rating_wrap > span.stars4')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
+        else:
+            book_info['four_graded_percent'] = 0
+        if len(soup.select('div.rating_wrap > span.stars3')) > 0:
+            book_info['three_graded_percent'] = soup.select('div.rating_wrap > span.stars3')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
+        else:
+            book_info['three_graded_percent'] = 0
+        if len(soup.select('div.rating_wrap > span.stars2')) > 0:
+            book_info['two_graded_percent'] = soup.select('div.rating_wrap > span.stars2')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
+        else:
+            book_info['two_graded_percent'] = 0
+        if len(soup.select('div.rating_wrap > span.stars1')) > 0:
+            book_info['one_graded_percent'] = soup.select('div.rating_wrap > span.stars1')[0].next_sibling.next_sibling.next_sibling.next_sibling.string.strip(' ').replace('%', '')
+        else:
+            book_info['one_graded_percent'] = 0
         if len(soup.select('div.mod-hd > h2 > span.pl > a')) > 0:
             book_info['short_comment_count'] = soup.select('div.mod-hd > h2 > span.pl > a')[0].string.replace('全部', '').replace('条', '').strip(' ')
         else:
