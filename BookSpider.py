@@ -42,6 +42,7 @@ class BookSpider(CommonSpider):
         :return:
         """
         is_can_use = False
+        proxy_url = ''
         proxy_data = dict()
         for i in range(10):
             proxy_data = self.__proxy_mysql.get_rand_proxy()
@@ -56,15 +57,18 @@ class BookSpider(CommonSpider):
                 self.__proxy_mysql.update({
                     'fail_num': 0
                 })
+                print('can_use')
                 break
         if is_can_use:
-            proxy = proxy_data['ip']+':'+proxy_data['port']
             proxies = {
-                proxy_data['protocol_type']: proxy
+                'http': 'http://' + proxy_url,
+                'https': 'https://' + proxy_url
             }
             url_response = self._request_tool.set_proxies(proxies).get_url_response(url)
             if not url_response:
                 url_response = self._request_tool.del_proxies().get_url_response(url)
+            else:
+                print(url_response.text)
         else:
             url_response = self._request_tool.del_proxies().get_url_response(url)
         return url_response
@@ -187,11 +191,11 @@ class BookSpider(CommonSpider):
             if soup_item.string in self.__detail_info.keys():
                 book_info[self.__detail_info[soup_item.string]] = self.detail_info_handler(soup_item)
         book_info['url'] = url.strip('/')
+        book_info['subject_id'] = book_info['url'][book_info['url'].rfind('/')+1:]
         if len(soup.select('#wrapper > h1 > span')) > 0:
             book_info['title'] = soup.select('#wrapper > h1 > span')[0].string
         else:
             book_info['title'] = ''
-        book_info['subject_id'] = book_info['url'][book_info['url'].rfind('/')+1:]
         if len(soup.select('#mainpic > a > img')) > 0:
             book_info['book_img'] = soup.select('#mainpic > a > img')[0].attrs['src']
         else:
@@ -324,7 +328,8 @@ class BookSpider(CommonSpider):
 
 
 book_spider = BookSpider()
-book_spider.get_response_use_proxy('https://www.baidu.com/')
+book_spider.book_spider()
+# print(book_spider.get_response_use_proxy('https://www.baidu.com/'))
 # print(book_spider.detail_handler('https://book.douban.com/subject/26963900/'))
 
 
