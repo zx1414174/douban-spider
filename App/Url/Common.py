@@ -46,7 +46,10 @@ class Common:
         try:
             if headers != '':
                 request_param['headers'] = headers
-            url_response = requests.get(**request_param)
+            session = requests.session()
+            url_response = session.get(**request_param)
+            if url_response.status_code != 200:
+                return False
         except:
             url_response = False
         return url_response
