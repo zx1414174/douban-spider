@@ -52,6 +52,6 @@ class ProxySpider(CommonSpider):
 
 proxy_spider = ProxySpider()
 proxy_spider.xici_spider('http://www.xicidaili.com/nn/')
-proxy_spider.xici_spider('http://www.xicidaili.com/nt/')
-proxy_spider.xici_spider('http://www.xicidaili.com/wn/')
-proxy_spider.xici_spider('http://www.xicidaili.com/wt/')
+# proxy_spider.xici_spider('http://www.xicidaili.com/nt/')
+# proxy_spider.xici_spider('http://www.xicidaili.com/wn/')
+# proxy_spider.xici_spider('http://www.xicidaili.com/wt/')
