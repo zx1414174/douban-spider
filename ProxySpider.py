@@ -26,7 +26,7 @@ class ProxySpider(CommonSpider):
         :return dist :
         """
         url = url.strip('/') + '/{page}'
-        for i in range(10):
+        for i in range(100):
             now_url = url.format(page=i+1)
             doc = self._request_tool.get_pyquery_doc(now_url)
             tr_doc_list = doc('#ip_list > tr')
@@ -49,9 +49,12 @@ class ProxySpider(CommonSpider):
                 self.__mysql_tool.set_table('db_proxy').insert(insert_proxy_data)
                 print(insert_proxy_data)
 
+    def data_proxy_test(self):
+        """
+        测试
+        :return:
+        """
+
 
 proxy_spider = ProxySpider()
 proxy_spider.xici_spider('http://www.xicidaili.com/nn/')
-proxy_spider.xici_spider('http://www.xicidaili.com/nt/')
-proxy_spider.xici_spider('http://www.xicidaili.com/wn/')
-proxy_spider.xici_spider('http://www.xicidaili.com/wt/')

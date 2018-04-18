@@ -17,8 +17,7 @@ class Proxy(Common):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'
         }
         request_param['proxies'] = {
-            'http': 'http://' + proxy,
-            'https': 'https://' + proxy,
+            protocol_type: protocol_type + '://' + proxy,
         }
         request_param['allow_redirects'] = False
         request_param['timeout'] = 2

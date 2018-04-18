@@ -43,6 +43,7 @@ class BookSpider(CommonSpider):
         """
         is_can_use = False
         proxy_url = ''
+        proxy_type = ''
         proxy_data = dict()
         for i in range(20):
             proxy_data = self.__proxy_mysql.get_rand_proxy()
@@ -50,7 +51,6 @@ class BookSpider(CommonSpider):
             proxy_type = proxy_data['protocol_type']
             is_can_use = self._request_tool.is_proxy_alive(proxy_url, proxy_type)
             if not is_can_use:
-                print(proxy_data)
                 self.__proxy_mysql.increase(proxy_data['id'], {
                     'fail_num': 1
                 })
@@ -58,19 +58,17 @@ class BookSpider(CommonSpider):
                 self.__proxy_mysql.update({
                     'fail_num': 0
                 })
-                print('can_use')
                 break
         if is_can_use:
             proxies = {
-                'http': 'http://' + proxy_url,
-                'https': 'https://' + proxy_url
+                proxy_type: proxy_type + '://' + proxy_url,
             }
             url_response = self._request_tool.set_proxies(proxies).get_url_response(url)
             if not url_response:
                 return False
                 # url_response = self._request_tool.del_proxies().get_url_response(url)
             else:
-                print(url_response.text)
+                print('成功！！')
         else:
             return False
             # url_response = self._request_tool.del_proxies().get_url_response(url)
