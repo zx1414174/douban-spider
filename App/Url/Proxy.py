@@ -27,6 +27,19 @@ class Proxy(Common):
             return True
         return False
 
+    def repeat_proxy_test(self, proxy, protocol_type='https'):
+        """
+        重复测试代理是否可用
+        :param proxy:
+        :param protocol_type:
+        :return:
+        """
+        for i in range(5):
+            result = self.is_proxy_alive(proxy, protocol_type)
+            if result:
+                return True
+        return False
+
 # common = Common()
 # print(common.is_proxy_alive('114.115.140.25:3128'))
 
