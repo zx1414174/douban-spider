@@ -4,7 +4,7 @@ from CommonSpider import CommonSpider
 import time
 
 
-class ProxySpider(CommonSpider):
+class MoguSpider(CommonSpider):
     """
     免费代理数据爬取
     """
@@ -19,9 +19,9 @@ class ProxySpider(CommonSpider):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'
         })
 
-    def xici_spider(self, url):
+    def mogu_spider(self, url):
         """
-        爬取西刺代理
+        提取蘑菇代理数据
         :param url:
         :return dist :
         """
@@ -44,14 +44,14 @@ class ProxySpider(CommonSpider):
                     .format(**insert_proxy_data)
                 if self.__mysql_tool.search_sql(where_sql).exit():
                     continue
-                is_live = self._request_tool.repeat_proxy_test(insert_proxy_data['port'], insert_proxy_data['protocol_type'])
+                is_live = self._request_tool.repeat_proxy_test(insert_proxy_data['port'],insert_proxy_data['protocol_type'])
                 if not is_live:
                     continue
-                insert_proxy_data['create_time'] = int(self.now_time)
-                insert_proxy_data['update_time'] = int(self.now_time)
+                insert_proxy_data['create_time'] = self.now_time
+                insert_proxy_data['update_time'] = self.now_time
                 self.__mysql_tool.set_table('db_proxy').insert(insert_proxy_data)
                 print(insert_proxy_data)
 
 
-proxy_spider = ProxySpider()
-proxy_spider.xici_spider('http://www.xicidaili.com/nn/')
+proxy_spider = MoguSpider()
+proxy_spider.mogu_spider('http://www.xicidaili.com/nn/')

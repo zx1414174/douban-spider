@@ -17,8 +17,7 @@ class Proxy(Common):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'
         }
         request_param['proxies'] = {
-            'http': 'http://' + proxy,
-            'https': 'https://' + proxy,
+            protocol_type: protocol_type + '://' + proxy,
         }
         request_param['allow_redirects'] = False
         request_param['timeout'] = 2
@@ -26,6 +25,19 @@ class Proxy(Common):
         response = self.set_request_param(request_param).get_url_response(url)
         if response:
             return True
+        return False
+
+    def repeat_proxy_test(self, proxy, protocol_type='https'):
+        """
+        重复测试代理是否可用
+        :param proxy:
+        :param protocol_type:
+        :return:
+        """
+        for i in range(5):
+            result = self.is_proxy_alive(proxy, protocol_type)
+            if result:
+                return True
         return False
 
 # common = Common()
