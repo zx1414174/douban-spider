@@ -44,7 +44,7 @@ class ProxySpider(CommonSpider):
                     .format(**insert_proxy_data)
                 if self.__mysql_tool.search_sql(where_sql).exit():
                     continue
-                is_live = self._request_tool.repeat_proxy_test(insert_proxy_data['port'], insert_proxy_data['protocol_type'])
+                is_live = self._request_tool.repeat_proxy_test(insert_proxy_data['port'], insert_proxy_data['protocol_type'].lower())
                 if not is_live:
                     continue
                 insert_proxy_data['create_time'] = int(self.now_time)

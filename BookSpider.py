@@ -50,7 +50,7 @@ class BookSpider(CommonSpider):
         for i in range(5):
             proxy_data = self.__proxy_mysql.get_rand_proxy()
             proxy_url = proxy_data['ip'] + ':' + proxy_data['port']
-            proxy_type = proxy_data['protocol_type']
+            proxy_type = proxy_data['protocol_type'].lower()
             is_can_use = self._request_tool.is_proxy_alive(proxy_url, proxy_type)
             if not is_can_use:
                 self.__proxy_mysql.increase(proxy_data['id'], {
