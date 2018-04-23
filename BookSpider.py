@@ -47,7 +47,7 @@ class BookSpider(CommonSpider):
         proxy_url = ''
         proxy_type = ''
         proxy_data = dict()
-        for i in range(20):
+        for i in range(5):
             proxy_data = self.__proxy_mysql.get_rand_proxy()
             proxy_url = proxy_data['ip'] + ':' + proxy_data['port']
             proxy_type = proxy_data['protocol_type']
