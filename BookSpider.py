@@ -8,6 +8,8 @@ from App.Mysql.Book import Book
 from App.Mysql.BookTagRelation import BookTagRelation
 from App.Url.Proxy import Proxy
 from CommonSpider import CommonSpider
+from multiprocessing import Pool
+import os
 
 
 class BookSpider(CommonSpider):
@@ -45,7 +47,7 @@ class BookSpider(CommonSpider):
         proxy_url = ''
         proxy_type = ''
         proxy_data = dict()
-        for i in range(20):
+        for i in range(5):
             proxy_data = self.__proxy_mysql.get_rand_proxy()
             proxy_url = proxy_data['ip'] + ':' + proxy_data['port']
             proxy_type = proxy_data['protocol_type']
@@ -108,14 +110,23 @@ class BookSpider(CommonSpider):
 
     def book_spider(self):
         """
-        爬取豆瓣书籍
+        爬取豆瓣书籍(多线程)
         :return:
         """
         tag_list = self.__book_tag_mysql.get()
         for tag in tag_list:
             if tag['url'] != '':
                 url = tag['url'].replace('tag//tag', 'tag')
-                self.list_handler(url, tag['id'])
+
+    def one_tag_book_spider(self, tag_id):
+        """
+        爬取单个tag数据数据
+        :param tag_id:
+        :return:
+        """
+        tag = self.__book_tag_mysql.search_sql('where id={tag_id}'.format(tag_id=tag_id)).find()
+        url = tag['url'].replace('tag//tag', 'tag')
+        self.list_handler(url, tag_id)
 
     def list_handler(self, url, tag_id):
         """
@@ -328,9 +339,22 @@ class BookSpider(CommonSpider):
         return soup_item.next_sibling.strip(' ')
 
 
-book_spider = BookSpider()
-book_spider.book_spider()
-# print(book_spider.get_response_use_proxy('https://www.baidu.com/'))
+def process_book(tag_id):
+    print('process %s.' % os.getpid())
+    book_spider = BookSpider()
+    book_spider.one_tag_book_spider(tag_id)
+
+
+process_book(4)
+# if __name__ == '__main__':
+#     # 多进程爬取
+#     p = Pool(9)
+#     for i in range(2, 9):
+#         p.apply_async(process_book, args=(i,))
+#     print('Waiting for all subprocesses done...')
+#     p.close()
+#     p.join()
+#     print('All subprocesses done.')
 # print(book_spider.detail_handler('https://book.douban.com/subject/26963900/'))
 
 
