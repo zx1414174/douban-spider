@@ -345,16 +345,16 @@ def process_book(tag_id):
     book_spider.one_tag_book_spider(tag_id)
 
 
-process_book(4)
-# if __name__ == '__main__':
-#     # 多进程爬取
-#     p = Pool(9)
-#     for i in range(2, 9):
-#         p.apply_async(process_book, args=(i,))
-#     print('Waiting for all subprocesses done...')
-#     p.close()
-#     p.join()
-#     print('All subprocesses done.')
+# process_book(4)
+if __name__ == '__main__':
+    # 多进程爬取
+    p = Pool(9)
+    for i in range(2, 9):
+        p.apply_async(process_book, args=(i,))
+    print('Waiting for all subprocesses done...')
+    p.close()
+    p.join()
+    print('All subprocesses done.')
 # print(book_spider.detail_handler('https://book.douban.com/subject/26963900/'))
 
 

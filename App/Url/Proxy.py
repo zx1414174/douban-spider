@@ -12,6 +12,7 @@ class Proxy(Common):
         :param str protocol_type: 代理协议类型
         :return:
         """
+        protocol_type = protocol_type.lower()
         request_param = dict()
         request_param['headers'] = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'
@@ -35,7 +36,7 @@ class Proxy(Common):
         :return:
         """
         for i in range(5):
-            result = self.is_proxy_alive(proxy, protocol_type)
+            result = self.is_proxy_alive(proxy, protocol_type.lower())
             if result:
                 return True
         return False
